@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
-
+add_compile_definitions(_HAS_STD_BYTE=0)
 project ("MidiControlApp")
 
 include_directories(./MIDI/include)
