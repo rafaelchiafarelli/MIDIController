@@ -1,0 +1,3 @@
+[submodule "MidiControlApp/rtmidi"]
+	path = MidiControlApp/rtmidi
+	url = https://github.com/thestk/rtmidi.git

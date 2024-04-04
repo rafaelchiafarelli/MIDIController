@@ -1,6 +1,0 @@
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/CMakeFiles/MidiControlApp.dir
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/CMakeFiles/ALL_BUILD.dir
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/CMakeFiles/ZERO_CHECK.dir
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/MIDI/CMakeFiles/MIDI.dir
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/rtmidi/CMakeFiles/rtmidi.dir
-C:/Users/Usuário/source/repos/MIDIController/MidiControlApp/out/Common/CMakeFiles/common.dir
