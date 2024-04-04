@@ -1,0 +1,549 @@
+#include "midithread.hpp"
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <chrono>
+#include <thread>
+#include <string>
+
+#include <iomanip>
+
+#include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
+
+#include <algorithm>
+#include <chrono>
+void MIDI::Stop()
+{
+    stop =true;
+    
+    if(outToFile)
+        {
+            outFileStream.close();
+        }
+
+    outToFile = false;
+    if(in_thread)
+         in_thread->join();
+    if(out_thread)
+        out_thread->join();
+    if(thcoms)
+        thcoms->join();
+        
+   // com->die();
+
+}
+void MIDI::parse()
+{
+
+}
+MIDI::~MIDI(){
+    Stop();
+    if(in_thread)
+        delete in_thread;
+    if(out_thread)
+        delete out_thread;
+    if(thcoms)
+        delete thcoms;
+   // if(com)
+   //     delete com;
+}
+
+void mycallback(double deltatime, std::vector< unsigned char >* message, void *_this)
+{
+    unsigned int nBytes = message->size();
+    for (unsigned int i = 0; i < nBytes; i++)
+        std::cout << "Byte " << i << " = " << (int)message->at(i) << ", ";
+    if (nBytes > 0)
+        std::cout << "stamp = " << deltatime << std::endl;
+    midiSignal midiS;
+    midiS.byte[0] = message->at(0);
+    midiS.byte[1] = message->at(1);
+    midiS.byte[2] = message->at(2);
+    midiS.byte[3] = 0;
+    static_cast<MIDI*>(_this)->processInput(midiS);
+    static_cast<MIDI*>(_this)->output->sendMessage(message);
+   
+}
+
+
+MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(_jsonFileName,&modes,&header),oActions()
+{
+    jsonFileName = _jsonFileName;
+    outToFile = false;
+    memset(port_name,0,PORT_NAME_SIZE);
+    for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
+        ports_it != hw_ports.end();
+        ports_it++)
+        {
+            if(!json.DevName.compare(ports_it->name))
+            {
+                sprintf(port_name,"%s",ports_it->port.c_str());
+                break;
+            }
+        }
+    stop = false;
+    send = false;
+    int err = 0;
+
+    /* MIDI hw stuff */
+    std::vector< RtMidi::Api > apis;
+    RtMidi::getCompiledApi(apis);
+
+    if (apis.size() < 1)
+    {
+        std::cout << "MAJOR ERROR - API NOT COMPILED PROPERLY" << std::endl;
+        return;
+    }
+
+    std::cout << "\nAPIs\n  API #0: unspecified / default\n";
+    std::string input_name,output_name;
+    int dev_index = -1, dev_index_out = -1;
+    RtMidi::Api api = RtMidi::Api::WINDOWS_MM;
+    for (size_t n = 0; n < apis.size(); n++)
+    {
+        std::string tmp = RtMidi::getApiDisplayName(apis[n]);
+        std::cout << "  API #" << apis[n] << ": " << tmp << "\n";
+        if (!json.DevName.compare(tmp)) {
+            api = static_cast<RtMidi::Api>(n);
+        }
+    }
+    input = new RtMidiIn(api);
+    output = new RtMidiOut(api);
+
+    unsigned int i = 0, nPorts = input->getPortCount();
+    unsigned int nOutPorts = output->getPortCount();
+
+    if (nPorts == 0 || nOutPorts == 0) {
+        std::cout << "MAJOR ERROR No input ports available!" << std::endl;
+        return;
+    }
+
+    if (nPorts == 1) {
+        std::cout << "\nOpening Input " << input->getPortName() << std::endl;
+        dev_index = 0;
+        
+    }
+    else {
+        for (i = 0; i < nPorts; i++) {
+            std::string tmp = input->getPortName(i);
+
+            std::cout << " Input Port #" << i << "input: " << tmp << '\n';
+            if (!tmp.compare(json.DevInput))
+            {
+                input_name = tmp;
+                dev_index = i;
+            }
+
+        }
+    }
+
+    if (nOutPorts == 1) {
+        std::cout << "\nOpening Output " << output->getPortName() << std::endl;
+        dev_index_out = 0;
+    }
+    else {
+        for (i = 0; i < nOutPorts; i++) {
+
+            std::string outTmp = output->getPortName(i);
+            std::cout << " comparing Output Port #" << i << " with:"<<json.DevOutput<<"output:" << outTmp<<"."<< '\n';
+
+            if (!outTmp.compare(json.DevOutput))
+            {
+                std::cout << " Output Port Selected #" << i << "output:" << outTmp << "." << '\n';
+                output_name = outTmp;
+                dev_index_out = i;
+            }
+        }
+    }
+
+
+    input->openPort(dev_index);
+    output->openPort(dev_index_out);
+
+    input->setCallback(&mycallback,this);
+    // Don't ignore sysex, timing, or active sensing messages.
+    input->ignoreTypes(false, false, false);
+
+    execHeader(); //execute the commands in the header
+    SelectedMode = 0;
+    for(std::vector<ModeType>::iterator m_it = modes.begin();
+        m_it != modes.end();
+        m_it++)
+    {
+        if(m_it->is_active)
+        {
+            CurrentMode = *m_it;
+            processMode(CurrentMode);
+            break;
+        }
+        SelectedMode++;
+    }
+    in_thread = new thread(&MIDI::in_func,this);
+    out_thread = new thread(&MIDI::out_func,this);
+    thcoms = new thread(&MIDI::coms_handler,this);
+
+
+}
+
+
+
+void MIDI::execHeader()
+{
+    for(std::vector<Actions>::iterator it = header.begin();
+        it != header.end();
+        it++)
+    {
+        for(std::vector<devActions>::iterator devIt = it->out.begin();
+            devIt != it->out.end();
+            devIt++)
+        {
+            if(devIt->tp == midi)
+            {
+                send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
+                if(devIt->mAct.delay > 0)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
+                }
+            }
+        }
+    }
+}
+
+void MIDI::coms_handler()
+{
+    while(!stop)
+    {
+        /*
+        std::vector<std::string> resp = com->heartbeat();
+        std::vector<std::string>::iterator command = resp.begin(); //begin with the UUID
+        if(!resp.empty())
+        {
+            command++; //get the msg contents
+            if(command->compare("OK")) //regular response is OK, not OK, does not mean BAD.
+            {
+                if(!command->compare("reload"))
+                {
+                    Reload();
+                }
+                else if(!command->compare("outstop"))
+                {
+                    outStop();
+                }
+                else if(!command->compare("file"))
+                {
+                    command++;
+                    string param = *command;
+                    bool isOpen = outFile(param);
+                }
+            }
+        }
+
+        */
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+}
+
+
+
+void MIDI::send_mouse(mouseActions mouse)
+{
+    cout<<mouse<<endl;
+}
+
+void MIDI::send_midi(char *send_data, size_t send_data_length)
+{
+
+    /*
+    int err = 0;
+    if ((err = snd_rawmidi_nonblock(output, 0)) < 0) 
+    {
+        std::cout<<"cannot set blocking mode: "<<snd_strerror(err)<<std::endl;
+    }
+    if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) 
+    {
+        std::cout<<"cannot send data: "<<snd_strerror(err)<<std::endl;
+    }
+    */
+    const unsigned char* send = (unsigned char *)send_data;
+    output->sendMessage(send, 3);
+
+}
+void MIDI::processMode(ModeType m)
+{
+    for(std::vector<Actions>::iterator h_it =  m.header.begin();
+        h_it != m.header.end();
+        h_it++)
+    {
+        for(std::vector<devActions>::iterator out_it = h_it->out.begin();
+            out_it != h_it->out.end();
+            out_it++)
+        {
+            if(out_it->tp == devType::midi)
+            {
+                send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
+                if(out_it->mAct.delay > 0)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(out_it->mAct.delay));
+                }
+            }
+        }
+    }
+}
+
+
+void MIDI::processInput(midiSignal midiS)
+{
+    lock_guard<mutex> locker(locking_mechanism);
+    midiActions tmp;
+    tmp.midi = midiS;
+   // bool res = com->dispatch(tmp.ar_str());
+   /* bool res = false;
+    if(!res)
+        std::cout<<"dispatch overflow"<<std::endl;
+        */
+    if(outToFile)
+    {
+        outFileStream<<tmp<<endl;
+    }
+    
+    if(CurrentMode.is_active)
+    {
+        for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
+        {
+            switch(it_act->in.mAct.midi_mode)
+            {
+                case midi_normal:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
+                    {
+                        lock_guard<mutex> locker(midi_out_mutex);
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }
+                break;
+                case midi_trigger_higher:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] < midiS.byte[2]))
+                    {
+                        lock_guard<mutex> locker(midi_out_mutex);
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }
+                break;                
+                case midi_trigger_lower:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] > midiS.byte[2]))
+                    {
+                        lock_guard<mutex> locker(midi_out_mutex);
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }
+                break;
+                case midi_spot:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]))
+                    {
+                        lock_guard<mutex> locker(midi_out_mutex);
+                        for(vector<devActions>::iterator out_it=it_act->out.begin();
+                            out_it!=it_act->out.end();
+                            out_it++)
+                            {
+                                out_it->spot = (int) midiS.byte[2];
+                            }
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }
+                break;
+                case midi_blink:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
+                    {
+                        lock_guard<mutex> locker(midi_out_mutex);
+                        for(vector<devActions>::iterator out_it=it_act->out.begin();
+                            out_it!=it_act->out.end();
+                            out_it++)
+                            {
+                                out_it->spot = (int) midiS.byte[2];
+                            }
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }                
+                break;
+            }
+        }
+    }
+}
+
+void MIDI::changeMode(std::vector<Actions>::iterator it_act)
+{
+int id_dest = it_act->change_to;
+
+
+for(vector<ModeType>::iterator m_it = modes.begin();
+    m_it!=modes.end();
+    m_it++)
+    {
+
+
+        if(m_it->index == id_dest)
+        {
+            //Current mode must be turned off, in memory, not in file 
+
+            vector<ModeType>::iterator l_it = modes.begin();
+            l_it+=id_dest;
+            l_it->is_active = false;
+
+            //changed the mode to the newly selected one
+            CurrentMode = *m_it;
+
+            //Activete this new one
+            processMode(CurrentMode);
+
+            CurrentMode.is_active=true;
+            saveJSON();
+        }
+    }    
+}
+
+void MIDI::saveJSON(){
+
+}
+
+void MIDI::out_func()
+{
+
+    while(!stop)
+    {
+        if(send)
+        {
+            lock_guard<mutex> locker(midi_out_mutex);
+            std::vector<devActions> to_send = oQueue.front();
+            for(std::vector<devActions>::iterator out = to_send.begin();
+                out != to_send.end();
+                out++)
+            {
+                switch(out->tp)
+                {
+                    case keyboard:
+                        out->kData.spot = out->spot;
+                        std::cout << "keyboard out:" << out->kData;
+                        keyboard_send(out->kData);
+                        if(out->kData.delay != 0)
+                            std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
+                        break;
+                    case midi:
+                        send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
+                        if(out->mAct.delay !=0)
+                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
+                        break;
+                    case mouse:
+                        send_mouse(out->mouse);
+                        break;
+                    case joystick:
+                        send_joystick();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            oQueue.pop();
+            if(oQueue.empty())
+            {
+                send = false;
+            }
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+}
+/**
+ * 
+ * This is the thread that will read the input's from user and queue the outputs
+ *      Start by connecting to the device and sending information present at the header section of the json file.
+ * 
+ * 
+ */ 
+
+void MIDI::in_func()
+{
+ 
+
+}
+
+void MIDI::Reload(){
+    lock_guard<mutex> locker(locking_mechanism);
+    while(!oQueue.empty())
+    {
+        oQueue.pop();
+    }
+    header.clear();
+    modes.clear();
+    json.Clear();
+    json.Reload(jsonFileName,&modes,&header);
+    execHeader();
+}
+
+bool MIDI::outFile(string name)
+{
+lock_guard<mutex> locker(locking_mechanism);
+bool ret = outFileStream.is_open();
+    if(!ret)
+    {
+        outFileName = name;
+        outFileStream.open(name, std::ofstream::out | std::ofstream::app);
+        ret = outFileStream.is_open();
+        outToFile = ret;
+    }
+return ret;
+}
+
+
+void MIDI::outStop()
+{
+lock_guard<mutex> locker(locking_mechanism);
+outToFile =false;
+    if(outFileStream.is_open())
+    {
+        outFileStream.close();
+    }
+}
+
+

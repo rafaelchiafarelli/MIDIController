@@ -1,0 +1,190 @@
+{
+	"archive" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/machine:x64",
+				"role" : "flags"
+			}
+		]
+	},
+	"artifacts" : 
+	[
+		{
+			"path" : "MIDI/MIDI.lib"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"MIDI/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 14,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 16,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 17,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 10,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 11,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 12,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 3,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Ob0 /Od /RTC1 -std:c++20"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/./MIDI/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/./Common/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/./rtmidi"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/MIDI/./include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/MIDI/../rtmidi"
+				},
+				{
+					"backtrace" : 10,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/MIDI/../Common/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Usu\u00e1rio/source/repos/MIDIController/MidiControlApp/rtmidi"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "20"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Common::@13b50f4fff9a3833e1fc"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "rtmidi::@530fc580bf4cd4f54259"
+		}
+	],
+	"id" : "MIDI::@79144573b676aa5cbf34",
+	"name" : "MIDI",
+	"nameOnDisk" : "MIDI.lib",
+	"paths" : 
+	{
+		"build" : "MIDI",
+		"source" : "MIDI"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "MIDI/src/midithread.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}
