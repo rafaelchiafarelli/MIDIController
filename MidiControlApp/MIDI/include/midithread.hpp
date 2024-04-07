@@ -23,102 +23,52 @@
 #include "jsonParser.h"
 #include <sstream>
 #include <string>
-#include <RtMidi.h>
-#include "aconfig.h"
-#include <thread>
+
 #include <set>
 #include <atomic>
 #include <string>
 #include <vector>
 #include <queue>
 #include <mutex>
-#include <oActions.hpp>
+#include "midiOutput.hpp"
 
 
 using namespace std;
-#define PORT_NAME_SIZE 10
-#define MILLISECONDS_TIMEOUT 10
 
-class raw_midi{
-    public:
-        string port;
-        string devName;
-        string sub_name;
-        string name;
-        int sub;
-        int card;
-        int device;
-    friend std::ostream& operator<<(std::ostream &os, const raw_midi &dt){
-        os<<"port:"<<dt.port<<" devName:"<<dt.devName<<" sub_name:"<<dt.sub_name<<" name:"<<dt.name;
-        return os;
-    };
-};
 
-class MIDI : private oActions{
+
+class MIDI{
 
     private:
 
         std::string jsonFileName;
-
         mutex locking_mechanism;
-        mutex midi_out_mutex;
-        std::thread *in_thread;
-        std::thread *out_thread;
-        std::thread *thcoms;
-;
-        
-        
-        std::queue<std::vector<devActions> > oQueue;
-        void in_func(); //midi input handler
-        void out_func(); //keyboard and mouse handler
-        bool outToFile;
-        std::string outFileName;
-        ofstream outFileStream;
-
-        atomic_bool send;
-        atomic_bool stop;
-        int timeout;
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
         ModeType CurrentMode;
         jsonParser json;
 
-        unsigned int SelectedMode;
+        unsigned int SelectedModeIndex;
 
-        RtMidiIn *input;
-
-        char port_name[PORT_NAME_SIZE];
-        void saveJSON();
         void changeMode(std::vector<Actions>::iterator it_act);
         void execHeader();
-        void parse();
+
 
         void processMode(ModeType m);
-        void send_midi(char *send_data, size_t send_data_length);
-        void send_mouse(mouseActions mouse);
-        void send_joystick(){};
-        void startup();
 
-        std::vector<std::string> explode(std::string const & s, char delim);
         void Stop();
-        void outStop();
-        bool outFile(string name);
-        void oMouse(mouseActions) {};
-        void oJoystick(joystickActions) {};
-        void oKeyboard(keyboardActions) {};
-
-        void coms_handler();
-
+        MidiOut* mOut;
     public:
-        RtMidiOut* output;
+       
         int getCurrentMode() {
             return CurrentMode.index;
         }
         void processInput(midiSignal midiS);
         void Reload();
 
-        MIDI( string xmlFileName, vector<raw_midi> hw_ports);
+        MIDI( string xmlFileName);
+
         ~MIDI();
 
 };

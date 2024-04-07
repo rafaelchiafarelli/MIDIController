@@ -4,6 +4,7 @@
 #include "actions.h"
 #include "keyNumber.hpp"
 #include "textCharSets.hpp"
+#include "keyParser.hpp"
 
 #define BUF_LEN 512
 using namespace std;
@@ -49,11 +50,10 @@ static struct options jmod[] = {
 
 class oActions: public KeySet{
     private:
-        int fd = 0;
-        char const *hid_name = {"/dev/hidg0"};    
+
         atomic_bool stop;
         const textCharSet textToCmdList[245] = TEXT_CHAR_SET
-
+            
     protected:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
         int keyboard_send(keyboardActions act);

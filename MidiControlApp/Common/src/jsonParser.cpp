@@ -65,7 +65,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 	if(body.HasMember("modes"))
 	{
 		rapidjson:Value& modes = body["modes"];
-		//std::cout<<"modes is array: "<<modes.IsArray()<<std::endl;
+		std::cout<<"modes is array: "<<modes.IsArray()<<std::endl;
 		if(modes.IsArray())
 		{
 			for(SizeType i = 0;
@@ -83,11 +83,17 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 				mode.is_active = false;
 				if(jMode.HasMember("active"))
 				{
-					if(jMode["active"].IsBool())
+					if (jMode["active"].IsBool())
+					{
 						mode.is_active = jMode["active"].GetBool();
+						if (mode.index != -1)
+							selectedMode = mode.index;
+					}
 				}
+
 				if(jMode.HasMember("mode_header"))
 				{
+
 					rapidjson::Value& mode_header = jMode["mode_header"];
 					if(mode_header.HasMember("actions"))
 					{
@@ -95,6 +101,8 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						if(actions.IsArray())
 						{
 							Actions mhActions;
+							mhActions.change_mode = false;
+							mhActions.change_to = 0;
 							for(SizeType t=0;
 								t<actions.Size();
 								t++)
@@ -107,6 +115,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
+				
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
@@ -151,15 +160,16 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 									{
 										if(ch_enable.GetBool() == true)
 										{
-											if(ch_mode.HasMember("change_to"))
-											{
-												rapidjson::Value& ch_to = ch_mode["change_to"];
-												if(ch_to.IsInt())
-												{
-													mActions.change_mode = true;
-													mActions.change_to = ch_to.GetInt();
-												}
-											}
+											mActions.change_mode = true;
+										}
+
+									}
+									if (ch_mode.HasMember("change_to"))
+									{
+										rapidjson::Value& ch_to = ch_mode["change_to"];
+										if (ch_to.IsInt())
+										{
+											mActions.change_to = ch_to.GetInt();
 										}
 									}
 								}
@@ -168,7 +178,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				//std::cout<<"actions done"<<std::endl;
+				//std::cout<<"mode:"<<mode<<std::endl;
 				op_modes->push_back(mode);
 			}
 		}
@@ -372,7 +382,10 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 					}else if(!mode_str.compare("spot"))
 					{
 						ret.mAct.midi_mode = midi_spot;
-					}	
+					}
+					else if (!mode_str.compare("blink")) {
+						ret.mAct.midi_mode = midi_blink;
+					}
 				}
 			}
 			if(act.HasMember("delay"))
@@ -462,7 +475,7 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 	}
 }
 
-devType jsonParser::GetDevType(std::string dType)
+devType GetDevType(std::string dType)
 {
 	devType ltype = devType::notype;
 	//std::cout<<"Type: "<<dType<<std::endl;

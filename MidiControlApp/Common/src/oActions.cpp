@@ -20,9 +20,6 @@ using namespace std;
 
 oActions::oActions()
 {
-
-	//fd = open(hid_name, O_RDWR, 0666);
-	cout<<"file: "<<hid_name<<" fd:"<<fd<<endl;
 }
 std::vector<std::string> oActions::words_seperate(std::string s){
     vector<string> ans;
@@ -228,36 +225,7 @@ int oActions::keyboard_send(keyboardActions act)
 */
 int oActions::mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 {
-	char *tok = strtok(buf, " ");
-	int mvt = 0;
-	int i = 0;
-	for (; tok != NULL; tok = strtok(NULL, " ")) {
 
-		if (strcmp(tok, "--quit") == 0)
-			return -1;
-
-		if (strcmp(tok, "--hold") == 0) {
-			*hold = 1;
-			continue;
-		}
-
-		for (i = 0; mmod[i].opt != NULL; i++)
-			if (strcmp(tok, mmod[i].opt) == 0) {
-				report[0] = report[0] | mmod[i].val;
-				break;
-			}
-		if (mmod[i].opt != NULL)
-			continue;
-
-		if (!(tok[0] == '-' && tok[1] == '-') && mvt < 2) {
-			errno = 0;
-			report[1 + mvt++] = (char)strtol(tok, NULL, 0);
-			if (errno != 0) {
-				report[1 + mvt--] = 0;
-			}
-			continue;
-		}
-	}
 	return 3;
 }
 
@@ -267,37 +235,7 @@ int oActions::mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 */
 int oActions::joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 {
-	char *tok = strtok(buf, " ");
-	int mvt = 0;
-	int i = 0;
-
-	*hold = 1;
-
-	/* set default hat position: neutral */
-	report[3] = 0x04;
-
-	for (; tok != NULL; tok = strtok(NULL, " ")) {
-
-		if (strcmp(tok, "--quit") == 0)
-			return -1;
-
-		for (i = 0; jmod[i].opt != NULL; i++)
-			if (strcmp(tok, jmod[i].opt) == 0) {
-				report[3] = (report[3] & 0xF0) | jmod[i].val;
-				break;
-			}
-		if (jmod[i].opt != NULL)
-			continue;
-
-		if (!(tok[0] == '-' && tok[1] == '-') && mvt < 3) {
-			errno = 0;
-			report[mvt++] = (char)strtol(tok, NULL, 0);
-			if (errno != 0) {
-				report[mvt--] = 0;
-			}
-			continue;
-		}
-	}
+	
 	return 4;
 }
 

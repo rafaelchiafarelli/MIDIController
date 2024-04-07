@@ -13,6 +13,7 @@ include_directories(./rtmidi)
 set(RTMIDI_BUILD_STATIC_LIBS TRUE)
 add_subdirectory (Common)
 add_subdirectory (MIDI)
+
 add_subdirectory (rtmidi)
 
 
@@ -22,6 +23,7 @@ add_executable (MidiControlApp "MidiControlApp.cpp" "MidiControlApp.h")
 target_link_libraries(MidiControlApp PUBLIC Common)
 target_link_libraries(MidiControlApp PUBLIC MIDI)
 target_link_libraries(MidiControlApp PUBLIC rtmidi)
+
 
 
 # TODO: Adicione testes e instale destinos, se necessário.

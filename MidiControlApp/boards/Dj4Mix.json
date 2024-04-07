@@ -102,12 +102,14 @@
                             "delay":50
                             },
                     "output":[
-                            { "type":"midi", "b0":144, "b1":2, "b2":127 },
+                            { "type":"midi",  "b0":144, "b1":2, "b2":127, "mode": "midi_blink" },
                             { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
                             { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
                             { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
-                            ]
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"^c" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"midi",  "b0":144, "b1":2, "b2":127, "mode": "midi_blink" }
+                    ]
                     },
                     {
                     "input":{

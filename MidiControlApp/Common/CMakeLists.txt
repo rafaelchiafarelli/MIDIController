@@ -11,5 +11,4 @@ if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS FALSE)
     set(BUILD_SHARED_LIBS NO)
 endif()
-
 add_library(Common ${SOURCES} )
