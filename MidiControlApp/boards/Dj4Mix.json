@@ -22,17 +22,9 @@
                 },
         "actions":
                 [
-                        {"type":"midi","b0":145,"b1":1,"b2":127},
-                        {"type":"midi","b0":145,"b1":1,"b2":0},
-                        {"type":"midi","b0":145,"b1":2,"b2":127},
-                        {"type":"midi","b0":145,"b1":2,"b2":0},
-                        {"type":"midi","b0":145,"b1":3,"b2":127},
-                        {"type":"midi","b0":145,"b1":3,"b2":0},
-                        {"type":"midi","b0":145,"b1":4,"b2":127},
-                        {"type":"midi","b0":145,"b1":4,"b2":0},
-                        {"type":"midi","b0":145,"b1":5,"b2":127},
-                        {"type":"midi","b0":145,"b1":5,"b2":0}
-                ]
+                   
+
+        ]
         },
     "body":
     {
@@ -56,76 +48,30 @@
                 "actions":
                 [
                     {
-                    "input":{"type":"midi", "b0":146,"b1":6,"b2":127},
-                     "output": [
-                        {
-                          "type": "keyboard",
-                          "data": "letter_r",
-                          "delay": 0,
-                          "keyType": "oneKey",
-                          "hold": "not_hold"
-                        },
-                        {
-                          "type": "keyboard",
-                          "data": "letter_a",
-                          "delay": 0,
-                          "keyType": "oneKey",
-                          "hold": "not_hold"
-                        },
-                        {
-                          "type": "keyboard",
-                          "data": "letter_f",
-                          "delay": 0,
-                          "keyType": "oneKey",
-                          "hold": "not_hold"
-                        },
-                        {
-                          "type": "keyboard",
-                          "data": "letter_a",
-                          "delay": 0,
-                          "keyType": "oneKey",
-                          "hold": "not_hold"
-                        }
-                            ],
-                    "change_mode":
-                        {
-                        "enable": false,
-                        "change_to":0
-                        }
+                    "input":{"type":"midi","b0":148,"b1":5,"b2":127,"delay":50},
+                    "output":[
+                      { "type":"midi",  "b0":148, "b1":5, "b2":0, "mode": "blink", "delay": 40 },
+                      { "type":"keyboard" , "data":"(+{VKEY_HOME})" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
+                      { "type":"keyboard" , "data":"^(c)" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}                            
+                      ],
+                    "change_mode":{"enable": false,"change_to":0}
                     },
                     {
-                    "input":{
-                            "type":"midi", 
-                            "b0":145,
-                            "b1":10,
-                            "b2":127,
-                            "delay":50
-                            },
-                    "output":[
-                            { "type":"midi",  "b0":144, "b1":2, "b2":127, "mode": "midi_blink" },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"^c" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"midi",  "b0":144, "b1":2, "b2":127, "mode": "midi_blink" }
-                    ]
+                    "input":{"type":"midi", "b0":148,"b1":6,"b2":127},
+                    "output": [
+                      { "type":"midi",  "b0":148, "b1":6, "b2":0, "mode": "blink","delay": 50   },
+                      { "type": "keyboard","data": "^(v)","delay": 0,"keyType": "hotKey","hold": "not_hold"}
+                      ],
+                    "change_mode":{"enable": false,"change_to":0}
                     },
+
                     {
-                    "input":{
-                            "type":"midi", 
-                            "b0":145,
-                            "b1":9,
-                            "b2":127,
-                            "delay":50
-                            },
+                    "input":{"type":"midi", "b0":148,"b1":9,"b2":127},
                     "output":[
-                            { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
-                            ]
+                        { "type":"midi", "b0":148, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"sudo systemctl status " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
+                        ],
+                    "change_mode":{"enable": false,"change_to":0}
                     }
                 ]
             }

@@ -7,67 +7,118 @@ bool MidiOut::send_midi(unsigned char* send_data, size_t send_data_length) {
     return false;
 
 }
-
+struct midiBlinker
+{
+    midiActions m;/*bliker code (last byte 127 for "ON" and 0 for "OFF")*/
+    unsigned int time = 0; /*time in milisseconds that is measured by the delay configured*/
+};
 void MidiOut::midi_out_thread()
 {
-    std::vector<std::vector<devActions>> currentActions;
+    std::vector<midiBlinker> blinkQueue;
+    std::vector<midiActions> delayQueue;
+    std::cout << "midi_out_thread" << std::endl;
+    int debug = 0;
     while (!dead)
     {
-        /*
-        if (send)
+        if (q.size() > 0)
         {
-
-
-            currentActions.push_back(oQueue.front());
-            oQueue.pop();
-            for (std::vector<std::vector<devActions>>::iterator to_send = currentActions.begin();
-                to_send != currentActions.end();
-                to_send++)
+            while (q.size()>0)
             {
-                for (std::vector<devActions>::iterator out = (*to_send).begin();
-                    out != (*to_send).end();
-                    out++)
+                devActions out = q.front();
+                if (out.tp == midi)
                 {
-                    switch (out->tp)
+                    if (out.mAct.delay > 0 && out.mAct.midi_mode == midi_normal)
                     {
-                    case keyboard:
-                        out->kData.spot = out->spot;
-                        std::cout << "keyboard out:" << out->kData;
-                        keyboard_send(out->kData);
-                        if (out->kData.delay > 0)
+                        delayQueue.push_back(out.mAct);
+                    }
+                    else if (out.mAct.midi_mode == midi_blink) 
+                    {
+                        bool is_there = false;
+                        std::vector<midiBlinker>::iterator to_delete;
+                        for (auto blinker = blinkQueue.begin();
+                            blinker != blinkQueue.end();
+                            blinker++)
                         {
-                            out->state = delaing;
+                            if (blinker->m.isEqual(out.mAct))
+                            {
+                                is_there = true;
+                                to_delete = blinker; //saves the iterator to remove from the list later.
+                                break;
+                            }
+                        }
+                        if (!is_there)
+                        {
+                            if (out.mAct.delay == 0)
+                            {
+                                out.mAct.delay = 80;
+                            }
+                            blinkQueue.push_back({ out.mAct ,out.mAct.delay });
                         }
                         else
                         {
-                            out->state = done;
+                            to_delete->m.midi.byte[2] = 0;
+                            send_midi((unsigned char*)to_delete->m.midi.byte, sizeof(midiSignal));
+                            blinkQueue.erase(to_delete);
                         }
-                        break;
-                    case midi:
-                        send_midi((char*)out->mAct.midi.byte, sizeof(midiSignal));
-                        if (out->mAct.delay != 0)
-                            std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
-                        break;
-                    case mouse:
-                        send_mouse(out->mouse);
-                        break;
-                    case joystick:
-                        send_joystick();
-                        break;
-                    default:
-                        break;
+                        
+                    }
+                    else /*output this midi in any other case */
+                    {
+                        send_midi((unsigned char*)out.mAct.midi.byte, sizeof(midiSignal));
                     }
                 }
-            }
-            if (oQueue.empty())
-            {
-                send = false;
+                q.pop();
             }
         }
         else
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(25));
+
+            if (delayQueue.size() > 0)
+            {
+                std::vector<std::vector<midiActions>::iterator> it_vec;
+                for (auto item = delayQueue.begin();
+                    item != delayQueue.end();
+                    item++)
+                {
+                    if (item->delay > 0) {
+                        item->delay--;
+                    }
+                    else
+                    {
+
+                        send_midi((*item).midi.byte, sizeof(midiSignal));
+                        it_vec.push_back(item);
+                    }
+                }
+                for (auto to_delete = it_vec.begin();
+                    to_delete != it_vec.end();
+                    to_delete++)
+                {
+                    delayQueue.erase(*to_delete);
+                }
+            }
+
+            if (blinkQueue.size() > 0)
+            {
+                for (auto blinker = blinkQueue.begin();
+                    blinker != blinkQueue.end();
+                    blinker++)
+                {
+                    if (blinker->time == blinker->m.delay)
+                    {
+                        blinker->m.midi.byte[2] = 127;
+                        send_midi((unsigned char*)blinker->m.midi.byte, sizeof(midiSignal));
+                    }
+                    else if(blinker->time == 0)
+                    {
+                        blinker->m.midi.byte[2] = 0;
+                        blinker->time = 2 * blinker->m.delay + 1;
+                        send_midi((unsigned char*)blinker->m.midi.byte, sizeof(midiSignal));
+                    }
+                    blinker->time--;
+                }
+            }
         }
-        */
     }
 }

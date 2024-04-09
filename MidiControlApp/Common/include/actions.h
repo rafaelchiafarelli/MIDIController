@@ -62,7 +62,7 @@ typedef enum
 class midiActions{
     public:
     midi_action_mode midi_mode = midi_normal;
-    midiSignal midi;
+    midiSignal midi = { 0 };
     unsigned long int delay = 0;
     std::string str(){
         char c_str[14];
@@ -89,6 +89,13 @@ class midiActions{
         this->midi = t.midi;
         this->delay = t.delay;
         return *this;
+    }
+    bool isEqual(const midiActions& t) {
+        if (((midi_action_mode)this->midi_mode == (midi_action_mode)t.midi_mode) && (this->midi.asInt == t.midi.asInt))
+        {
+            return true;
+        }
+        return false;
     }
 
 };

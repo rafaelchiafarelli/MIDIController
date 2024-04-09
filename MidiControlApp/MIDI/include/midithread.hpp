@@ -31,7 +31,7 @@
 #include <queue>
 #include <mutex>
 #include "midiOutput.hpp"
-
+#include "KeyboardOutput.hpp"
 
 using namespace std;
 
@@ -59,6 +59,7 @@ class MIDI{
 
         void Stop();
         MidiOut* mOut;
+        KeyboardOut* kOut;
     public:
        
         int getCurrentMode() {

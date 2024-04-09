@@ -10,6 +10,7 @@ class GenOutput {
 public:
 	GenOutput() {};
 	virtual void QueueOutput(devActions) {};
+	virtual void QueueOutput(std::vector<devActions> devAct) {};
 	virtual void start() {};
 	virtual void stop() {};
 

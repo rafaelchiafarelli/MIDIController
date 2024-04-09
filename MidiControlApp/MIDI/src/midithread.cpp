@@ -49,6 +49,7 @@ MIDI::MIDI(string _jsonFileName):modes(), header(), json(_jsonFileName,&modes,&h
     {
         std::cout << "initialize MidiOut" << std::endl;
         mOut = new MidiOut(json.DevName, json.DevOutput, &callback,this);
+        kOut = new KeyboardOut();
     }
     else
     {
@@ -73,19 +74,7 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
-        for(std::vector<devActions>::iterator devIt = it->out.begin();
-            devIt != it->out.end();
-            devIt++)
-        {
-            if(devIt->tp == midi)
-            {
-                mOut->send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
-                if(devIt->mAct.delay > 0)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
-                }
-            }
-        }
+        mOut->QueueOutput(it->out);
     }
 }
 
@@ -95,19 +84,7 @@ void MIDI::processMode(ModeType m)
         h_it != m.header.end();
         h_it++)
     {
-        for(std::vector<devActions>::iterator out_it = h_it->out.begin();
-            out_it != h_it->out.end();
-            out_it++)
-        {
-            if(out_it->tp == devType::midi)
-            {
-                mOut->send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
-                if(out_it->mAct.delay > 0)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(out_it->mAct.delay));
-                }
-            }
-        }
+        mOut->QueueOutput(h_it->out);
     }
 }
 
@@ -137,7 +114,7 @@ void MIDI::processInput(midiSignal midiS)
                         (it_act->in.mAct.midi.byte[2] < midiS.byte[2]))
                     {
                         mOut->QueueOutput(it_act->out);
-
+                        kOut->QueueOutput(it_act->out);
                         if (it_act->change_mode && it_act->change_to != -1)
                         {
                             changeMode(it_act);
@@ -153,7 +130,7 @@ void MIDI::processInput(midiSignal midiS)
                     {
 
                         mOut->QueueOutput(it_act->out);
-
+                        kOut->QueueOutput(it_act->out);
                         if (it_act->change_mode && it_act->change_to != -1)
                         {
                             changeMode(it_act);
@@ -163,7 +140,7 @@ void MIDI::processInput(midiSignal midiS)
                 break;
 
                 case midi_normal:
-                case midi_spot:
+                case midi_spot: /*this is the encoder... it should "keep a count" of actions, add and subtract and change mode if a given "spot" is rechead... (I don´t like this)*/
                 case midi_blink:
                 {
                     if ((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
@@ -171,7 +148,7 @@ void MIDI::processInput(midiSignal midiS)
                         (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
                     {
                         mOut->QueueOutput(it_act->out);
-
+                        kOut->QueueOutput(it_act->out);
                         if (it_act->change_mode && it_act->change_to != -1)
                         {
                             changeMode(it_act);

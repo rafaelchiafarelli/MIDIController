@@ -6,7 +6,6 @@
 #include "queue"
 #include "mutex"
 #include <RtMidi.h>
-
 #include <thread>
 
 
@@ -20,7 +19,7 @@ private:
 	RtMidiIn* input;
 	RtMidiOut* output;
     void midi_out_thread();
-	
+    std::thread t1;
 public:
     bool send_midi(unsigned char* send_data, size_t send_data_length);
 	void QueueOutput(std::vector<devActions> devAct)
@@ -38,6 +37,10 @@ public:
     void Halt() { 
         std::lock_guard<std::mutex> locker(lock);
         /*figure out a way to halt the system*/
+    }
+    ~MidiOut() {
+        dead = 0;
+        t1.join();
     }
 	MidiOut(std::string devNameIn, std::string devNameOut, callBackType cbk, void *ref)
 	{
@@ -120,7 +123,8 @@ public:
         input->setCallback(cbk, ref);
         // Don't ignore sysex, timing, or active sensing messages.
         input->ignoreTypes(false, false, false);
-
+        t1 = std::thread(&MidiOut::midi_out_thread,this);
+        
 	}
 };
 

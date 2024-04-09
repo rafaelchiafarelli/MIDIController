@@ -386,6 +386,9 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 					else if (!mode_str.compare("blink")) {
 						ret.mAct.midi_mode = midi_blink;
 					}
+					else if (!mode_str.compare("normal")) {
+						ret.mAct.midi_mode = midi_normal;
+					}
 				}
 			}
 			if(act.HasMember("delay"))

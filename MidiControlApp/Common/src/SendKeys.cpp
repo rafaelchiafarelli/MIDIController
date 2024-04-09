@@ -347,9 +347,33 @@ void CSendKeys::PopUpShiftKeys()
 }
 
 // Sends a key string
+bool CSendKeys::SendString(std::string KeyString)
+{
+    const char* to_send = KeyString.c_str();
+    TCHAR ch;
+    WORD MKey;
+    while (ch = *to_send)
+    {
+        // Get the VKey from the key
+        MKey = ::VkKeyScan(ch);
+        SendKey(MKey, 1, true);
+        to_send++;
+    }
+    return true;
+}
+// Sends a key string
+bool CSendKeys::SendOneKey(char ch)
+{
+    // Get the VKey from the key
+    WORD MKey;
+    MKey = ::VkKeyScan(ch);
+    SendKey(MKey, 1, true);
+    return true;
+}
+// Sends a key string
 bool CSendKeys::SendKeys(LPCTSTR KeysString, bool Wait)
 {
-  WORD MKey, NumTimes;
+  WORD MKey, NumTimes = 0;
   TCHAR KeyString[300] = {0};
   bool retval  = false;
   int  keyIdx;
@@ -397,7 +421,7 @@ bool CSendKeys::SendKeys(LPCTSTR KeysString, bool Wait)
 		SendKeyDown(VK_CONTROL, 1, false);
 	  m_bControlDown = true;
       break;
-
+      
     // WINKEY (Left-WinKey)
 	case '#':
       if(!m_bWinDown)
